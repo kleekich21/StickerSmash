@@ -1,17 +1,14 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, Suspense } from "react";
 import {
   TextInput,
-  FlatList,
   View,
   StyleSheet,
-  Pressable,
   Text,
+  ActivityIndicator,
 } from "react-native";
-import { useQuery } from "@tanstack/react-query";
-import { Image } from "expo-image";
-import { searchImages } from "@/api/imagesService";
-import { ImageResponse } from "@/types/images";
+import { ErrorBoundary } from "react-error-boundary";
 import debounce from "lodash.debounce";
+import SearchResult from "@/components/SearchResult";
 
 export default function PhotosScreen() {
   const [query, setQuery] = useState("");
@@ -31,12 +28,6 @@ export default function PhotosScreen() {
     debouncedSearch(input);
   };
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ["search", debouncedQuery],
-    queryFn: () => searchImages(debouncedQuery),
-    staleTime: 300000, // 5분 동안 데이터가 stale되지 않음
-  });
-
   return (
     <View style={styles.container}>
       <TextInput
@@ -46,13 +37,15 @@ export default function PhotosScreen() {
         onChangeText={handleChangeText}
       />
       <Text style={styles.searchTerm}>"{debouncedQuery}"</Text>
-      <FlatList
-        data={data}
-        renderItem={({ item }) => (
-          <Image source={item.urls.small_s3} style={styles.image} />
+      <ErrorBoundary fallback={<div>Something went wrong</div>}>
+        {debouncedQuery.length > 0 && (
+          <Suspense
+            fallback={<ActivityIndicator size="large" color="#0000ff" />}
+          >
+            <SearchResult debouncedQuery={debouncedQuery} />
+          </Suspense>
         )}
-        keyExtractor={(item) => item.id}
-      />
+      </ErrorBoundary>
     </View>
   );
 }
