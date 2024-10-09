@@ -17,6 +17,7 @@ export default function EmojiPicker({ isVisible, children, onClose }: Props) {
             <MaterialIcons name="close" color="#fff" size={22} />
           </Pressable>
         </View>
+        {children}
       </View>
     </Modal>
   );
