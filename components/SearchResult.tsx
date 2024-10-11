@@ -1,16 +1,26 @@
+import { useState } from "react";
 import { FlatList, View, StyleSheet } from "react-native";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
-import { searchImages } from "@/api/imagesService";
+import { searchRandomImages } from "@/api/imagesService";
 
 interface Props {
   debouncedQuery: string;
 }
 
 export default function SearchResult({ debouncedQuery }: Props) {
-  const { data } = useSuspenseQuery({
+  const [refreshing, setRefreshing] = useState(false);
+
+  // 새로고침 함수 정의
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await refetch(); // refetch로 데이터 다시 불러오기
+    setRefreshing(false);
+  };
+
+  const { data, refetch } = useSuspenseQuery({
     queryKey: ["search", debouncedQuery],
-    queryFn: () => searchImages(debouncedQuery),
+    queryFn: () => searchRandomImages(debouncedQuery),
     staleTime: 300000, // 5분 동안 데이터가 stale되지 않음
   });
 
@@ -22,6 +32,8 @@ export default function SearchResult({ debouncedQuery }: Props) {
           <Image source={item.urls.small_s3} style={styles.image} />
         )}
         keyExtractor={(item) => item.id}
+        refreshing={refreshing} // Pull to refresh 상태 표시
+        onRefresh={onRefresh} // 새로고침 동작 시 실행되는 함수
       />
     </View>
   );
